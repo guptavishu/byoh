@@ -60,7 +60,26 @@ When given a task:
 5. When all steps are complete, summarize what was accomplished.
 
 Be concise in your planning — short numbered lists, not paragraphs.""",
+
+    "review": """Before giving your final answer, review your own work:
+1. Re-read the original request and check if you fully addressed it.
+2. If you wrote code, check for bugs, edge cases, and off-by-one errors.
+3. If you read or modified files, verify the paths and content are correct.
+4. If your answer includes facts or numbers, double-check them.
+5. State any concerns or caveats at the end, prefixed with "Note:".""",
+
+    "repair": """Before giving your final answer, critically review your work:
+1. Re-read the original request — did you actually do what was asked?
+2. Check for errors: wrong file paths, broken code, incorrect calculations,
+   missing steps, or incomplete output.
+3. If you find a problem, fix it immediately — re-run tools or code as needed.
+   Do NOT just describe the problem; actually correct it.
+4. Only give your final answer once you are confident it is correct.
+5. If you made corrections, briefly note what you fixed.""",
 }
+
+# Default orchestration applied to every run() call unless overridden
+DEFAULT_ORCHESTRATION = ["repair"]
 
 
 def _default_provider() -> Provider:
@@ -120,6 +139,8 @@ class Harness:
             self.prompts.update(prompts)
         # Registered skills — tools are only activated when orchestration includes them
         self.skills: dict[str, Skill] = {}
+        # Default orchestration — applied to every run() unless overridden
+        self.default_orchestration: list[str] = list(DEFAULT_ORCHESTRATION)
 
     def add_skill(self, skill: Skill) -> None:
         """Register a skill.
@@ -242,7 +263,9 @@ class Harness:
 
         orchestration — list of prompt fragment keys to stack on top of the
                         mode's base prompts. e.g. ["planning"] or
-                        ["planning", "safety"]. Default is none.
+                        ["planning", "safety"]. Merged with
+                        self.default_orchestration (default: ["repair"]).
+                        Pass an empty list to disable defaults.
         tools_only — when True, only JSON tool calls are used (no code execution).
         exec_code — when True, only code execution is used (no tools).
         on_tool_call(ToolCall) — optional callback when LLM requests a tool
@@ -252,7 +275,15 @@ class Harness:
 
         Returns the final Response (the one with no tool calls / code blocks).
         """
-        orch = orchestration or []
+        # Merge default + per-call orchestration, deduplicated, order preserved
+        if orchestration is not None:
+            combined = list(orchestration)
+        else:
+            combined = []
+        for key in self.default_orchestration:
+            if key not in combined:
+                combined.append(key)
+        orch = combined
 
         # Code-only mode
         if exec_code:
@@ -648,7 +679,14 @@ class Harness:
         **kwargs,
     ) -> Response:
         """Async version of run() — defaults to hybrid, with tool-only and code-only overrides."""
-        orch = orchestration or []
+        if orchestration is not None:
+            combined = list(orchestration)
+        else:
+            combined = []
+        for key in self.default_orchestration:
+            if key not in combined:
+                combined.append(key)
+        orch = combined
 
         if exec_code:
             return await self._arun_code_loop(

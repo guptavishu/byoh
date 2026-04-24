@@ -160,11 +160,13 @@ def main():
     loaded = _load_skills(h)
 
     if args.skills:
+        from byoh.core import BUILTIN_PROMPTS, DEFAULT_ORCHESTRATION
         print("Available orchestration modes and skills:\n")
         print("  Built-in:")
-        for key in ["hybrid", "code_exec", "planning"]:
+        for key in BUILTIN_PROMPTS:
+            default_marker = " *" if key in DEFAULT_ORCHESTRATION else ""
             preview = h.prompts.get(key, "")[:60].replace("\n", " ")
-            print(f"    {key:<20} {preview}...")
+            print(f"    {key:<20} {preview}...{default_marker}")
         if loaded:
             print("\n  From skills:")
             for name in loaded:
@@ -173,6 +175,8 @@ def main():
         else:
             print("\n  No skills loaded.")
             print("  Add skills to ./byoh_skills.py or ~/.byoh/skills.py")
+        if DEFAULT_ORCHESTRATION:
+            print(f"\n  * = active by default ({', '.join(DEFAULT_ORCHESTRATION)})")
         return
 
     if args.prompt is None:
