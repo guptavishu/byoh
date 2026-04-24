@@ -61,13 +61,6 @@ When given a task:
 
 Be concise in your planning — short numbered lists, not paragraphs.""",
 
-    "review": """Before giving your final answer, review your own work:
-1. Re-read the original request and check if you fully addressed it.
-2. If you wrote code, check for bugs, edge cases, and off-by-one errors.
-3. If you read or modified files, verify the paths and content are correct.
-4. If your answer includes facts or numbers, double-check them.
-5. State any concerns or caveats at the end, prefixed with "Note:".""",
-
     "repair": """Before giving your final answer, critically review your work:
 1. Re-read the original request — did you actually do what was asked?
 2. Check for errors: wrong file paths, broken code, incorrect calculations,
